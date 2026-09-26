@@ -4,7 +4,7 @@
   "sourceRoot": "packages/data-access-user/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:shared"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

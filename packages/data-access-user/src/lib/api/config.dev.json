@@ -1,0 +1,5 @@
+{
+  "production": false,
+  "environmentName": "dev",
+  "apiBaseUrl": "https://jsonplaceholder.typicode.com"
+}

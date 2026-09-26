@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 
 @Component({
   imports: [RouterOutlet],
-  selector: 'app-authApp-entry',
+  selector: 'app-auth-entry',
   template: `<router-outlet/>`,
 })
 export class RemoteEntry {}
