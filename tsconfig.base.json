@@ -21,7 +21,8 @@
       ],
       "@super-fitness/data-access-user": [
         "./packages/data-access-user/src/index.ts"
-      ]
+      ],
+      "@org/ui": ["./packages/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
