@@ -7,13 +7,23 @@ export const appRoutes: Route[] = [
     loadChildren: () =>
       loadRemote<typeof import('superFitness/Routes')>(
         'superFitness/Routes',
-      ).then((m) => m!.remoteRoutes),
+      ).then((remote) => {
+        if (!remote) {
+          throw new Error('Unable to load superFitness routes');
+        }
+        return remote.remoteRoutes;
+      }),
   },
   {
     path: 'auth',
     loadChildren: () =>
       loadRemote<typeof import('authApp/Routes')>('authApp/Routes').then(
-        (m) => m!.remoteRoutes,
+        (remote) => {
+          if (!remote) {
+            throw new Error('Unable to load authApp routes');
+          }
+          return remote.remoteRoutes;
+        },
       ),
-  }
+  },
 ];
