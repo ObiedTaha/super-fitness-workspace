@@ -1,0 +1,27 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "paths": {
+      "authApp/Routes": ["./apps/authApp/src/app/remote-entry/entry.routes.ts"],
+      "superFitness/Routes": [
+        "./apps/superFitness/src/app/remote-entry/entry.routes.ts"
+      ],
+      "@super-fitness/data-access-user": [
+        "./packages/data-access-user/src/index.ts"
+      ]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}
