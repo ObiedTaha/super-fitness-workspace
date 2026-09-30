@@ -20,6 +20,11 @@
           {
             "glob": "**/*",
             "input": "apps/shell/public"
+          },
+          {
+            "glob": "*.png",
+            "input": "apps/authApp/public/assets/auth",
+            "output": "assets/auth"
           }
         ],
         "styles": ["apps/shell/src/styles.css"],

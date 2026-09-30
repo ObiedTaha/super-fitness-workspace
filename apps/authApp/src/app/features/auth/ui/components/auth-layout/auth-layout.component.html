@@ -1,0 +1,41 @@
+<main
+  class="relative isolate grid min-h-svh text-white scheme-dark md:grid-cols-2"
+>
+  <div
+    class="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+    aria-hidden="true"
+  >
+    <img
+      src="assets/auth/background.png"
+      alt=""
+      class="h-full w-full scale-110 object-cover object-center blur-lg"
+    />
+    <div class="absolute inset-0 bg-[#17191d]/75"></div>
+  </div>
+  <aside
+    class="relative flex h-24 items-center justify-center overflow-hidden border-b border-orange-500/20 md:h-auto md:min-h-svh md:border-r md:border-b-0"
+  >
+    <img
+      src="assets/auth/hero.png"
+      alt="Super Fitness"
+      width="3000"
+      height="3000"
+      class="relative h-full w-36 object-contain md:absolute md:top-16 md:left-1/2 md:h-auto md:w-1/3 md:max-w-52 md:-translate-x-1/2"
+    />
+    <img
+      src="assets/auth/logo.png"
+      alt=""
+      width="2000"
+      height="2000"
+      class="pointer-events-none absolute bottom-12 left-1/2 hidden max-h-[65svh] w-4/5 max-w-2xl -translate-x-1/2 object-contain object-bottom md:block"
+    />
+  </aside>
+  <section
+    class="flex min-h-[calc(100svh-6rem)] min-w-0 items-center justify-center px-6 py-10 sm:px-10 md:min-h-svh lg:px-16"
+    aria-label="Authentication"
+  >
+    <div class="flex w-full min-w-0 justify-center ">
+      <router-outlet />
+    </div>
+  </section>
+</main>
