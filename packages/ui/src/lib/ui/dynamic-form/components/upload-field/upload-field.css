@@ -1,0 +1,25 @@
+:host ::ng-deep .red-text-icon-only .p-button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+
+  --p-button-primary-color: #d32f2f !important;
+  --p-button-padding-x: 0px !important;
+  --p-button-padding-y: 0px !important;
+  
+  color: #d32f2f !important;
+  font-size: 0.95rem !important;
+  gap: 0.5rem !important;
+  flex-direction: row-reverse !important;
+}
+
+::ng-deep .red-text-icon-only .p-button .p-button-icon {
+  color: #d32f2f !important;
+}
+
+::ng-deep .red-text-icon-only .p-button:hover,
+::ng-deep .red-text-icon-only .p-button:hover .p-button-icon {
+  background: transparent !important;
+  color: #b71c1c !important;
+}

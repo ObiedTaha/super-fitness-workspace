@@ -1,0 +1,25 @@
+<div class="flex flex-col gap-1 w-full" [class.untouched]="!control()().touched()">
+    <label class="text-sm font-medium text-gray-700 block" [for]="field().key">{{ field().label }}{{ field().required ?
+        ' *' : '' }}</label>
+
+    @switch (field().type) {
+    @case ('number') {
+    <p-inputnumber [formField]="$any(control())"
+      [placeholder]="field().placeholder ?? ''" />
+    }
+    @case ('date') {
+    <p-datepicker [formField]="$any(control())"
+      dateFormat="dd/mm/yy" [showIcon]="true" />
+    }
+    @default {
+    <input pInputText [type]="field().type" [placeholder]="field().placeholder ?? ''"
+      [formField]="control()" />
+    }
+    }
+
+  @if (control()().touched() && control()().invalid()) {
+    <span class="text-red-600 text-xs">
+      {{ control()().errors()[0]?.message }}
+    </span>
+  }
+</div>

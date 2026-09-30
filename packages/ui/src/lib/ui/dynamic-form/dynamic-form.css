@@ -1,0 +1,45 @@
+.form-row {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: start;
+}
+
+.field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+:host ::ng-deep .untouched .p-invalid,
+:host ::ng-deep .untouched.p-invalid {
+  border-color: var(--p-form-field-border-color, #d1d5db) !important;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .untouched .p-inputnumber.p-invalid > .p-inputtext,
+:host ::ng-deep .untouched .p-datepicker.p-invalid > .p-inputtext {
+  border-color: var(--p-form-field-border-color, #d1d5db) !important;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .untouched .p-invalid::placeholder,
+:host ::ng-deep .untouched.p-invalid::placeholder,
+:host ::ng-deep .untouched .p-select.p-invalid .p-select-label.p-placeholder,
+:host ::ng-deep .untouched .p-select.p-invalid .p-placeholder {
+  color: var(--p-form-field-placeholder-color, #9ca3af) !important;
+}
+
+:host ::ng-deep .untouched .p-invalid:hover,
+:host ::ng-deep .untouched.p-invalid:hover,
+:host ::ng-deep .untouched .p-inputnumber.p-invalid > .p-inputtext:hover,
+:host ::ng-deep .untouched .p-datepicker.p-invalid > .p-inputtext:hover {
+  border-color: var(--p-form-field-hover-border-color, #9ca3af) !important;
+}
+
+:host ::ng-deep .untouched .p-invalid:focus,
+:host ::ng-deep .untouched .p-invalid:focus-within,
+:host ::ng-deep .untouched .p-inputnumber.p-invalid > .p-inputtext:focus,
+:host ::ng-deep .untouched .p-datepicker.p-invalid > .p-inputtext:focus {
+  border-color: var(--p-primary-color, #3b82f6) !important;
+}

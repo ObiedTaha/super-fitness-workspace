@@ -1,0 +1,19 @@
+  <p-dialog
+      [visible]="open()"
+      (visibleChange)="open.set($event)"
+      [modal]="true"
+      [dismissableMask]="true"
+      [style]="{ width: '600px' }"
+    >
+      <p-galleria
+        [value]="images()"
+        [numVisible]="4"
+        [showThumbnails]="false"
+        [showIndicators]="true"
+        [circular]="true"
+      >
+        <ng-template pTemplate="item" let-item>
+          <img [src]="item" style="width: 100%; display: block;" />
+        </ng-template>
+      </p-galleria>
+    </p-dialog>
