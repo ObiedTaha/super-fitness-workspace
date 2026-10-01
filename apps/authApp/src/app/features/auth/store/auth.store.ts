@@ -1,23 +1,18 @@
-import {
-  inject,
-  Injectable,
-  signal,
-  Signal,
-  WritableSignal,
-} from '@angular/core';
+import { Injectable, Signal, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import {
   BehaviorSubject,
+  Observable,
   catchError,
   distinctUntilChanged,
   finalize,
   firstValueFrom,
   map,
-  Observable,
   of,
+  tap,
   throwError,
 } from 'rxjs';
-import { Router } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { extractError } from '../../../core/utils/http-error.util';
 import {
   ChangePasswordRequest,
@@ -37,8 +32,21 @@ import { ResetPasswordUseCase } from '../domain/use-cases/reset-password.use-cas
 import { SignInUseCase } from '../domain/use-cases/sign-in.use-case';
 import { SignUpUseCase } from '../domain/use-cases/sign-up.use-case';
 import { VerifyResetCodeUseCase } from '../domain/use-cases/verify-reset-code.use-case';
-import { SessionService } from '../services/session.service';
-import { TokenStorageService } from '../services/token-storage.service';
+import { TokenStorage } from '../domain/token-storage';
+
+interface AuthState {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  initialized: boolean;
+}
+
+const initialState: AuthState = {
+  user: null,
+  loading: false,
+  error: null,
+  initialized: false,
+};
 
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
@@ -51,189 +59,177 @@ export class AuthStore {
   private readonly changePasswordUseCase = inject(ChangePasswordUseCase);
   private readonly loadProfileUseCase = inject(LoadProfileUseCase);
   private readonly logoutUseCase = inject(LogoutUseCase);
-  private readonly tokenStorage = inject(TokenStorageService);
-  private readonly sessionService = inject(SessionService);
+  private readonly tokenStorage = inject(TokenStorage);
 
-  private readonly userSubject = new BehaviorSubject<User | null>(null);
-  private readonly loadingSubject = new BehaviorSubject<boolean>(false);
-  private readonly errorSubject = new BehaviorSubject<string | null>(null);
+  private readonly state$ = new BehaviorSubject<AuthState>(initialState);
 
-  readonly user$: Observable<User | null> = this.userSubject.asObservable();
-  readonly loading$: Observable<boolean> = this.loadingSubject.asObservable();
-  readonly error$: Observable<string | null> = this.errorSubject.asObservable();
-  readonly isAuthenticated$: Observable<boolean> = this.user$.pipe(
-    map((user) => user !== null),
-    distinctUntilChanged()
-  );
+  readonly user$ = this.select((state) => state.user);
+  readonly isAuthenticated$ = this.select((state) => state.user !== null);
+  readonly loading$ = this.select((state) => state.loading);
+  readonly error$ = this.select((state) => state.error);
+  readonly initialized$ = this.select((state) => state.initialized);
 
-  private readonly authenticatedSignal = signal(false);
-  readonly isAuthenticated: Signal<boolean> = this.authenticatedSignal.asReadonly();
-
-  private readonly userWritable = signal<User | null>(null) as WritableSignal<
-    User | null
-  >;
-
-  get currentUser(): User | null {
-    return this.userSubject.value;
-  }
+  readonly user: Signal<User | null>;
+  readonly isAuthenticated: Signal<boolean>;
+  readonly loading: Signal<boolean>;
+  readonly error: Signal<string | null>;
+  readonly initialized: Signal<boolean>;
 
   constructor() {
-    this.sessionService.expired$.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.clearSession();
-    });
+    this.user = toSignal(this.user$, { initialValue: null });
+    this.isAuthenticated = toSignal(this.isAuthenticated$, { initialValue: false });
+    this.loading = toSignal(this.loading$, { initialValue: false });
+    this.error = toSignal(this.error$, { initialValue: null });
+    this.initialized = toSignal(this.initialized$, { initialValue: false });
+  }
+
+  get currentUser(): User | null {
+    return this.state$.value.user;
   }
 
   setUser(user: User | null): void {
-    this.userSubject.next(user);
-    this.authenticatedSignal.set(user !== null);
-    this.userWritable.set(user);
-    this.errorSubject.next(null);
+    this.patch({ user, error: null });
   }
 
   clearSession(): void {
     this.tokenStorage.clear();
-    this.userSubject.next(null);
-    this.authenticatedSignal.set(false);
-    this.userWritable.set(null);
-    this.errorSubject.next(null);
+    this.reset();
   }
 
-  signIn(
-    request: SignInRequest,
-    remember = false
-  ): Observable<SignInResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
+  restoreSession(): Observable<void> {
+    if (!this.tokenStorage.has()) {
+      this.patch({ user: null, initialized: true });
+      return of(void 0);
+    }
 
-    return this.signInUseCase.execute(request).pipe(
-      map((result) => {
-        this.tokenStorage.save(result.token, remember);
-        this.setUser(result.user);
-        return result;
+    return this.loadProfileUseCase.execute().pipe(
+      tap((user) => this.patch({ user, initialized: true })),
+      map(() => void 0),
+      catchError(() => {
+        this.tokenStorage.clear();
+        this.patch({ user: null, initialized: true });
+        return of(void 0);
       }),
-      catchError((error: unknown) => {
-        const message = extractError(error);
-        this.errorSubject.next(message);
-        return throwError(() => new Error(message));
-      }),
-      finalize(() => this.loadingSubject.next(false))
-    );
-  }
-
-  signUp(request: SignUpRequest): Observable<MessageResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
-
-    return this.signUpUseCase.execute(request).pipe(
-      catchError((error: unknown) => {
-        const message = extractError(error);
-        this.errorSubject.next(message);
-        return throwError(() => new Error(message));
-      }),
-      finalize(() => this.loadingSubject.next(false))
-    );
-  }
-
-  forgotPassword(request: ForgotPasswordRequest): Observable<MessageResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
-
-    return this.forgotPasswordUseCase.execute(request).pipe(
-      catchError((error: unknown) => {
-        const message = extractError(error);
-        this.errorSubject.next(message);
-        return throwError(() => new Error(message));
-      }),
-      finalize(() => this.loadingSubject.next(false))
-    );
-  }
-
-  verifyResetCode(request: VerifyResetCodeRequest): Observable<MessageResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
-
-    return this.verifyResetCodeUseCase.execute(request).pipe(
-      catchError((error: unknown) => {
-        const message = extractError(error);
-        this.errorSubject.next(message);
-        return throwError(() => new Error(message));
-      }),
-      finalize(() => this.loadingSubject.next(false))
-    );
-  }
-
-  resetPassword(request: ResetPasswordRequest): Observable<MessageResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
-
-    return this.resetPasswordUseCase.execute(request).pipe(
-      catchError((error: unknown) => {
-        const message = extractError(error);
-        this.errorSubject.next(message);
-        return throwError(() => new Error(message));
-      }),
-      finalize(() => this.loadingSubject.next(false))
-    );
-  }
-
-  changePassword(request: ChangePasswordRequest): Observable<MessageResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
-
-    return this.changePasswordUseCase.execute(request).pipe(
-      catchError((error: unknown) => {
-        const message = extractError(error);
-        this.errorSubject.next(message);
-        return throwError(() => new Error(message));
-      }),
-      finalize(() => this.loadingSubject.next(false))
     );
   }
 
   async initSession(): Promise<void> {
-    const token = this.tokenStorage.get();
+    await firstValueFrom(this.restoreSession());
+  }
 
-    if (!token) {
-      this.clearSession();
-      return;
-    }
+  signIn(request: SignInRequest, remember = false): Observable<SignInResult> {
+    this.patch({ loading: true, error: null });
 
-    this.loadingSubject.next(true);
+    return this.signInUseCase.execute(request).pipe(
+      tap((result) => {
+        this.tokenStorage.save(result.token, remember);
+        this.patch({ user: result.user, loading: false });
+      }),
+      catchError((error: unknown) => {
+        const message = extractError(error);
+        this.patch({ loading: false, error: message });
+        return throwError(() => new Error(message));
+      }),
+    );
+  }
 
-    try {
-      const user = await firstValueFrom(
-        this.loadProfileUseCase.execute().pipe(
-          map((profileUser) => {
-            this.setUser(profileUser);
-            return profileUser;
-          }),
-          catchError(() => {
-            this.clearSession();
-            return of(null);
-          })
-        )
-      );
+  signUp(request: SignUpRequest): Observable<MessageResult> {
+    this.patch({ loading: true, error: null });
 
-      if (!user) {
-        this.clearSession();
-      }
-    } finally {
-      this.loadingSubject.next(false);
-    }
+    return this.signUpUseCase.execute(request).pipe(
+      catchError((error: unknown) => {
+        const message = extractError(error);
+        this.patch({ loading: false, error: message });
+        return throwError(() => new Error(message));
+      }),
+      finalize(() => this.patch({ loading: false })),
+    );
+  }
+
+  forgotPassword(request: ForgotPasswordRequest): Observable<MessageResult> {
+    this.patch({ loading: true, error: null });
+
+    return this.forgotPasswordUseCase.execute(request).pipe(
+      catchError((error: unknown) => {
+        const message = extractError(error);
+        this.patch({ loading: false, error: message });
+        return throwError(() => new Error(message));
+      }),
+      finalize(() => this.patch({ loading: false })),
+    );
+  }
+
+  verifyResetCode(request: VerifyResetCodeRequest): Observable<MessageResult> {
+    this.patch({ loading: true, error: null });
+
+    return this.verifyResetCodeUseCase.execute(request).pipe(
+      catchError((error: unknown) => {
+        const message = extractError(error);
+        this.patch({ loading: false, error: message });
+        return throwError(() => new Error(message));
+      }),
+      finalize(() => this.patch({ loading: false })),
+    );
+  }
+
+  resetPassword(request: ResetPasswordRequest): Observable<MessageResult> {
+    this.patch({ loading: true, error: null });
+
+    return this.resetPasswordUseCase.execute(request).pipe(
+      catchError((error: unknown) => {
+        const message = extractError(error);
+        this.patch({ loading: false, error: message });
+        return throwError(() => new Error(message));
+      }),
+      finalize(() => this.patch({ loading: false })),
+    );
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<MessageResult> {
+    this.patch({ loading: true, error: null });
+
+    return this.changePasswordUseCase.execute(request).pipe(
+      catchError((error: unknown) => {
+        const message = extractError(error);
+        this.patch({ loading: false, error: message });
+        return throwError(() => new Error(message));
+      }),
+      finalize(() => this.patch({ loading: false })),
+    );
   }
 
   logout(): Observable<MessageResult> {
-    this.loadingSubject.next(true);
-    this.errorSubject.next(null);
+    this.patch({ loading: true, error: null });
 
     return this.logoutUseCase.execute().pipe(
       catchError(() => of({ message: 'Logged out' })),
-      map((result) => {
+      tap(() => {
         this.clearSession();
         void this.router.navigate(['/auth/login']);
-        return result;
       }),
-      finalize(() => this.loadingSubject.next(false))
+      map((result) => result),
+      finalize(() => this.patch({ loading: false })),
     );
+  }
+
+  expireSession(): void {
+    this.tokenStorage.clear();
+    this.reset();
+  }
+
+  clearError(): void {
+    this.patch({ error: null });
+  }
+
+  private reset(): void {
+    this.state$.next({ ...initialState, initialized: true });
+  }
+
+  private patch(partial: Partial<AuthState>): void {
+    this.state$.next({ ...this.state$.value, ...partial });
+  }
+
+  private select<T>(selector: (state: AuthState) => T): Observable<T> {
+    return this.state$.pipe(map(selector), distinctUntilChanged());
   }
 }

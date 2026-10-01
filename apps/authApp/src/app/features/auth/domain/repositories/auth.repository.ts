@@ -10,13 +10,13 @@ import {
 import { MessageResult, SignInResult } from '../models/auth-results.model';
 import { User } from '../models/user.model';
 
-export interface AuthRepository {
-  signIn(request: SignInRequest): Observable<SignInResult>;
-  signUp(request: SignUpRequest): Observable<MessageResult>;
-  forgotPassword(request: ForgotPasswordRequest): Observable<MessageResult>;
-  verifyResetCode(request: VerifyResetCodeRequest): Observable<MessageResult>;
-  resetPassword(request: ResetPasswordRequest): Observable<MessageResult>;
-  changePassword(request: ChangePasswordRequest): Observable<MessageResult>;
-  loadProfile(): Observable<User>;
-  logout(): Observable<MessageResult>;
+export abstract class AuthRepository {
+  abstract signIn(request: SignInRequest): Observable<SignInResult>;
+  abstract signUp(request: SignUpRequest): Observable<MessageResult>;
+  abstract forgotPassword(request: ForgotPasswordRequest): Observable<MessageResult>;
+  abstract verifyResetCode(request: VerifyResetCodeRequest): Observable<MessageResult>;
+  abstract resetPassword(request: ResetPasswordRequest): Observable<MessageResult>;
+  abstract changePassword(request: ChangePasswordRequest): Observable<MessageResult>;
+  abstract loadProfile(): Observable<User>;
+  abstract logout(): Observable<MessageResult>;
 }

@@ -7,7 +7,7 @@ import { RegisterPageComponent } from './ui/pages/register/register.page.compone
 import { ResetPasswordPageComponent } from './ui/pages/reset-password/reset-password.page.component';
 import { VerifyResetCodePageComponent } from './ui/pages/verify-reset-code/verify-reset-code.page.component';
 
-export const authRoutes: Routes = [
+export const AUTH_ROUTES: Routes = [
   {
     path: 'login',
     component: LoginPageComponent,
@@ -34,3 +34,5 @@ export const authRoutes: Routes = [
   },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
 ];
+
+export const authRoutes = AUTH_ROUTES;

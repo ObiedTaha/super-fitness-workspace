@@ -27,7 +27,7 @@ import {
 import { mapUserDtoToDomain } from '../mappers/auth.mapper';
 
 @Injectable({ providedIn: 'root' })
-export class AuthHttpRepository implements AuthRepository {
+export class AuthHttpRepository extends AuthRepository {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${inject(API_BASE_URL)}/auth`;
 

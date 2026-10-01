@@ -1,50 +1,32 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
-import { API_BASE_URL } from '../../config/api-base-url.token';
-import { SessionService } from '../../../features/auth/services/session.service';
-import { TokenStorageService } from '../../../features/auth/services/token-storage.service';
 
-const PUBLIC_AUTH_ENDPOINTS = [
-  '/auth/signin',
-  '/auth/signup',
-  '/auth/forgotPassword',
-  '/auth/verifyResetCode',
-  '/auth/resetPassword',
-];
+import { API_BASE_URL } from '../../config/api-base-url.token';
+import { AuthStore } from '../../../features/auth/store/auth.store';
+import { TokenStorage } from '../../../features/auth/domain/token-storage';
+
+const AUTH_ENDPOINTS = /\/auth\/(signin|signup|forgotPassword|verifyResetCode|resetPassword|logout)$/;
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const tokenStorage = inject(TokenStorageService);
-  const sessionService = inject(SessionService);
-  const apiBaseUrl = inject(API_BASE_URL);
-  const isPublicAuthRequest = PUBLIC_AUTH_ENDPOINTS.some((endpoint) =>
-    req.url.includes(endpoint)
-  );
-  const isApiRequest = req.url.startsWith(apiBaseUrl);
+  const apiUrl = inject(API_BASE_URL);
+  const tokens = inject(TokenStorage);
+  const store = inject(AuthStore);
 
-  if (!isApiRequest || isPublicAuthRequest) {
+  if (!req.url.startsWith(apiUrl)) {
     return next(req);
   }
 
-  const token = tokenStorage.get();
-  if (!token) {
-    return next(req);
-  }
-
-  const authReq = req.clone({
-    setHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const token = tokens.get();
+  const authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
   return next(authReq).pipe(
-    catchError((error) => {
-      if (error?.status === 401) {
-        tokenStorage.clear();
-        sessionService.expire();
+    catchError((error: unknown) => {
+      if (error instanceof HttpErrorResponse && error.status === 401 && !AUTH_ENDPOINTS.test(req.url)) {
+        store.expireSession();
       }
 
       return throwError(() => error);
-    })
+    }),
   );
 };

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
+import { TokenStorage } from '../domain/token-storage';
 
 @Injectable({ providedIn: 'root' })
-export class TokenStorageService {
+export class TokenStorageService extends TokenStorage {
   private readonly storageKey = 'elevate_auth_token';
 
   save(token: string, remember: boolean): void {
