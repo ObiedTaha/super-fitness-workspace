@@ -1,1 +1,1 @@
-export { authInterceptor } from '../../core/http/interceptors/auth.interceptor';
+export { authInterceptor } from '../../../core/http/interceptors/auth.interceptor';

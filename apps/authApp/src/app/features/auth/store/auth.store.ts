@@ -1,5 +1,4 @@
-import { Injectable, Signal, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   BehaviorSubject,
@@ -69,19 +68,11 @@ export class AuthStore {
   readonly error$ = this.select((state) => state.error);
   readonly initialized$ = this.select((state) => state.initialized);
 
-  readonly user: Signal<User | null>;
-  readonly isAuthenticated: Signal<boolean>;
-  readonly loading: Signal<boolean>;
-  readonly error: Signal<string | null>;
-  readonly initialized: Signal<boolean>;
-
-  constructor() {
-    this.user = toSignal(this.user$, { initialValue: null });
-    this.isAuthenticated = toSignal(this.isAuthenticated$, { initialValue: false });
-    this.loading = toSignal(this.loading$, { initialValue: false });
-    this.error = toSignal(this.error$, { initialValue: null });
-    this.initialized = toSignal(this.initialized$, { initialValue: false });
-  }
+  readonly user: WritableSignal<User | null> = signal(null);
+  readonly isAuthenticated: Signal<boolean> = computed(() => this.user() !== null);
+  readonly loading: WritableSignal<boolean> = signal(false);
+  readonly error: WritableSignal<string | null> = signal(null);
+  readonly initialized: WritableSignal<boolean> = signal(false);
 
   get currentUser(): User | null {
     return this.state$.value.user;
@@ -223,10 +214,20 @@ export class AuthStore {
 
   private reset(): void {
     this.state$.next({ ...initialState, initialized: true });
+    this.syncSignals(this.state$.value);
   }
 
   private patch(partial: Partial<AuthState>): void {
-    this.state$.next({ ...this.state$.value, ...partial });
+    const nextState = { ...this.state$.value, ...partial };
+    this.state$.next(nextState);
+    this.syncSignals(nextState);
+  }
+
+  private syncSignals(state: AuthState): void {
+    this.user.set(state.user);
+    this.loading.set(state.loading);
+    this.error.set(state.error);
+    this.initialized.set(state.initialized);
   }
 
   private select<T>(selector: (state: AuthState) => T): Observable<T> {

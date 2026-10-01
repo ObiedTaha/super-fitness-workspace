@@ -1,5 +1,5 @@
-import { inject } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import '@angular/compiler';
+import { Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,12 +50,10 @@ const buildStore = () => {
   const loadProfileUseCase = { execute: vi.fn(() => of(user)) } as unknown as LoadProfileUseCase;
   const logoutUseCase = { execute: vi.fn(() => of({ message: 'logged out' })) } as unknown as LogoutUseCase;
 
-  TestBed.resetTestingModule();
-  TestBed.configureTestingModule({
+  const injector = Injector.create({
     providers: [
       AuthStore,
       { provide: Router, useValue: router },
-      { provide: TokenStorage, useValue: tokenStorage },
       { provide: SignInUseCase, useValue: signInUseCase },
       { provide: SignUpUseCase, useValue: signUpUseCase },
       { provide: ForgotPasswordUseCase, useValue: forgotPasswordUseCase },
@@ -64,10 +62,10 @@ const buildStore = () => {
       { provide: ChangePasswordUseCase, useValue: changePasswordUseCase },
       { provide: LoadProfileUseCase, useValue: loadProfileUseCase },
       { provide: LogoutUseCase, useValue: logoutUseCase },
+      { provide: TokenStorage, useValue: tokenStorage },
     ],
   });
-
-  const store = TestBed.runInInjectionContext(() => inject(AuthStore));
+  const store = injector.get(AuthStore);
   return { store, tokenStorage };
 };
 
