@@ -1,21 +1,20 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { FormPage } from './form-page';
 
 describe('FormPage', () => {
-  let component: FormPage;
-  let fixture: ComponentFixture<FormPage>;
-
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FormPage],
     }).compileComponents();
-
-    fixture = TestBed.createComponent(FormPage);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('renders the title it is given', async () => {
+    const fixture = TestBed.createComponent(FormPage);
+    fixture.componentRef.setInput('title', 'Create account');
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('h1').textContent?.trim()).toBe(
+      'Create account'
+    );
   });
 });

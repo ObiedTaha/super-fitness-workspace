@@ -1,13 +1,29 @@
 import { NgComponentOutlet } from '@angular/common';
 import {
-  Component, computed, effect, input, output, signal,
-  Injector, inject, runInInjectionContext, untracked
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  Injector,
+  inject,
+  runInInjectionContext,
+  untracked,
 } from '@angular/core';
-import { form, required, readonly, FieldTree } from '@angular/forms/signals';
-import { FIELD_COMPONENTS } from '../../constant/field-registry';
-import { FieldConfig, FileUploadFn } from '../../models/field-types';
+import {
+  form,
+  required,
+  readonly,
+  validate,
+  FieldTree,
+} from '@angular/forms/signals';
 import { forkJoin, map, of } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
+import { FIELD_COMPONENTS } from '../../constant/field-registry';
+import { FieldConfig, FileUploadFn, FormMode } from '../../models/field-types';
+
+type FieldInputs = { field: FieldConfig; control: FieldTree<unknown> };
 
 @Component({
   selector: 'lib-dynamic-form',
@@ -17,30 +33,45 @@ import { TranslateService } from '@ngx-translate/core';
 })
 export class DynamicForm {
   private injector = inject(Injector);
-  private translate = inject(TranslateService);
+  /** Optional: the form falls back to an English message when no i18n is set up. */
+  private translate = inject(TranslateService, { optional: true });
+
   private modelInitialized = signal(false);
   private lastFieldKeys = signal<string | null>(null);
   private userFormInstance: FieldTree<Record<string, any>> | null = null;
-private inputsCache = new Map<string, { field: FieldConfig; control: any }>();
-private lastGroupedFieldsKeys: string | null = null;
+  private inputsCache = new Map<string, FieldInputs>();
 
   fields = input<FieldConfig[]>([]);
-  mode = input<'create' | 'update'>('create');
-  submitLabelInput = input<string | null>(null);
-  formSubmit = output<Record<string, any> | FormData>();
-  valueChanges = output<Record<string, any>>();
-  initialData = input<Record<string, any> | null>(null);
+  mode = input<FormMode>('create');
+  initialData = input<Record<string, unknown> | null>(null);
   uploadFn = input<FileUploadFn>();
   submitLabel = input<string>('Add');
-  isSubmitting = signal(false);
+  loadingLabel = input<string>('Submitting...');
+  /** Extra classes for the submit button, so a host page can theme it. */
+  submitClass = input<string>('');
+  /** Lets a page keep the button busy while its own request is in flight. */
+  submitting = input<boolean>(false);
+  /**
+   * Disable the submit button while the form is invalid (the default). Pass
+   * false to keep it clickable instead: an invalid submit then touches every
+   * field so each one shows what is missing.
+   */
+  disableSubmitWhenInvalid = input<boolean>(true);
 
-  FIELD_COMPONENTS = FIELD_COMPONENTS;
+  formSubmit = output<Record<string, unknown>>();
+  valueChanges = output<Record<string, unknown>>();
+
+  /** True while this component is uploading files, before formSubmit fires. */
+  private uploading = signal(false);
+  busy = computed(() => this.uploading() || this.submitting());
+
+  protected FIELD_COMPONENTS = FIELD_COMPONENTS;
 
   groupedFields = computed(() => {
-  const currentMode = this.mode();
+    const currentMode = this.mode();
 
     const visibleFields = this.fields().filter(
-      f => !f.hiddenIn?.includes(currentMode)
+      (f) => !f.hiddenIn?.includes(currentMode)
     );
 
     const groups = new Map<number, FieldConfig[]>();
@@ -50,15 +81,14 @@ private lastGroupedFieldsKeys: string | null = null;
       groups.get(row)!.push(field);
     });
     return Array.from(groups.values());
-});
+  });
 
   private modelSignal = signal<Record<string, any>>({});
+
   constructor() {
-     effect(() => {
-      const defaults = Object.fromEntries(
-          this.fields().map(f => [f.key, f.type === 'checkbox' ? false : ''])
-      );
-        const data = this.initialData();
+    effect(() => {
+      const defaults = this.defaultsFor(this.fields());
+      const data = this.initialData();
       this.modelSignal.set(data ? { ...defaults, ...data } : defaults);
     });
 
@@ -68,11 +98,11 @@ private lastGroupedFieldsKeys: string | null = null;
 
     effect(() => {
       const model = this.modelSignal();
-      const computedFields = this.fields().filter(f => f.computedFrom);
+      const computedFields = this.fields().filter((f) => f.computedFrom);
       if (!computedFields.length) return;
 
       const updates: Record<string, number> = {};
-      computedFields.forEach(field => {
+      computedFields.forEach((field) => {
         const [key1, key2] = field.computedFrom!.fields;
         const val1 = Number(model[key1]) || 0;
         const val2 = Number(model[key2]) || 0;
@@ -83,9 +113,23 @@ private lastGroupedFieldsKeys: string | null = null;
       });
 
       if (Object.keys(updates).length) {
-        this.modelSignal.update(m => ({ ...m, ...updates }));
+        this.modelSignal.update((m) => ({ ...m, ...updates }));
       }
     });
+  }
+
+  private defaultsFor(fields: FieldConfig[]): Record<string, any> {
+    return Object.fromEntries(fields.map((f) => [f.key, this.emptyValue(f)]));
+  }
+
+  /**
+   * Number fields start as `null`, not `''`: `p-inputnumber` coerces an empty
+   * string to 0 and would render a literal zero over its own placeholder.
+   */
+  private emptyValue(field: FieldConfig): unknown {
+    if (field.type === 'checkbox') return false;
+    if (field.type === 'number') return null;
+    return '';
   }
 
   userForm = computed(() => {
@@ -93,13 +137,14 @@ private lastGroupedFieldsKeys: string | null = null;
     const data = this.initialData();
 
     return untracked(() => {
-      const currentKeys = currentFields.map(f => f.key).sort().join(',');
+      const currentKeys = currentFields
+        .map((f) => f.key)
+        .sort()
+        .join(',');
       const structureChanged = currentKeys !== this.lastFieldKeys();
 
       if (!this.modelInitialized() || structureChanged) {
-        const defaults = Object.fromEntries(
-          currentFields.map(f => [f.key, f.type === 'checkbox' ? false : ''])
-        );
+        const defaults = this.defaultsFor(currentFields);
         if (!this.modelInitialized()) {
           this.modelSignal.set(data ? { ...defaults, ...data } : defaults);
         }
@@ -111,21 +156,36 @@ private lastGroupedFieldsKeys: string | null = null;
         return this.userFormInstance;
       }
 
+      // The field set changed, so every cached { field, control } pair now
+      // points at a stale FieldTree.
+      this.inputsCache.clear();
+
       this.userFormInstance = runInInjectionContext(this.injector, () =>
         form(this.modelSignal, (path) => {
           currentFields.forEach((field) => {
             required(path[field.key], {
-              when: () => {
-                const target = this.fields().find((f) => f.key === field.key);
-                return !!target?.required;
-              },
-              message: () =>
-                this.translate.instant('form.requiredMessage', { label: field.label }),
+              when: () => !!this.findField(field.key)?.required,
+              message: () => this.requiredMessage(field),
             });
 
-            readonly(path[field.key], () => {
-              const target = this.fields().find((f) => f.key === field.key);
-              return !!target?.readonly;
+            readonly(
+              path[field.key],
+              () => !!this.findField(field.key)?.readonly
+            );
+
+            validate(path[field.key], (ctx) => {
+              const value = ctx.value();
+              // `required` already reports empty values; don't double up.
+              if (value === '' || value === null || value === undefined) {
+                return null;
+              }
+
+              const message = this.findField(field.key)?.validate?.(
+                value,
+                this.modelSignal()
+              );
+
+              return message ? { kind: 'custom', message } : null;
             });
           });
         })
@@ -135,16 +195,31 @@ private lastGroupedFieldsKeys: string | null = null;
     });
   });
 
-  uploadedFiles = computed(() => {
-    const files: Record<string, any> = {};
-    this.fields()
-      .filter(f => f.type === 'upload')
-      .forEach(f => (files[f.key] = this.modelSignal()[f.key]));
-    return files;
-  });
+  private findField(key: string): FieldConfig | undefined {
+    return this.fields().find((f) => f.key === key);
+  }
 
-getInputs(field: FieldConfig) {
-    return { field, control: this.userForm()[field.key] };
+  private requiredMessage(field: FieldConfig): string {
+    return (
+      this.translate?.instant('form.requiredMessage', { label: field.label }) ??
+      `${field.label} is required`
+    );
+  }
+
+  /**
+   * NgComponentOutlet re-applies inputs whenever this object identity changes,
+   * so the pair is cached per field and only rebuilt when the form is rebuilt.
+   */
+  getInputs(field: FieldConfig): FieldInputs {
+    const cached = this.inputsCache.get(field.key);
+    if (cached && cached.field === field) return cached;
+
+    const inputs: FieldInputs = {
+      field,
+      control: this.userForm()[field.key] as FieldTree<unknown>,
+    };
+    this.inputsCache.set(field.key, inputs);
+    return inputs;
   }
 
   onSubmit(e: Event) {
@@ -154,26 +229,11 @@ getInputs(field: FieldConfig) {
       this.userForm()().markAsTouched();
       return;
     }
-    const allowedKeys = this.fields().map(f => f.key);
-    const excludedKeys = this.fields()
-      .filter(f => f.excludeFromSubmit)
-      .map(f => f.key);
+    if (this.busy()) return;
 
-    const model: Record<string, any> = {};
-    allowedKeys.forEach(key => {
-      if (!excludedKeys.includes(key)) {
-        model[key] = this.modelSignal()[key];
-      }
-    });
+    const model = this.buildPayload();
 
-    this.fields().forEach(field => {
-      if (field.type === 'number' && !excludedKeys.includes(field.key) && field.key in model) {
-        const val = model[field.key];
-        model[field.key] = val === '' || val === null ? null : Number(val);
-      }
-    });
-
-    const uploadFields = this.fields().filter(f => f.type === 'upload');
+    const uploadFields = this.fields().filter((f) => f.type === 'upload');
     const upload = this.uploadFn();
 
     if (!uploadFields.length || !upload) {
@@ -181,38 +241,66 @@ getInputs(field: FieldConfig) {
       return;
     }
 
-    this.isSubmitting.set(true);
+    this.uploading.set(true);
 
-    const uploads$ = uploadFields.map(field => {
+    const uploads$ = uploadFields.map((field) => {
       const value = model[field.key];
 
       if (
         typeof value === 'string' ||
-        (Array.isArray(value) && value.every(v => typeof v === 'string'))
+        (Array.isArray(value) && value.every((v) => typeof v === 'string'))
       ) {
         return of([field.key, value] as const);
       }
 
       const files: File[] = Array.isArray(value)
         ? value.filter((v): v is File => v instanceof File)
-        : (value instanceof File ? [value] : []);
+        : value instanceof File
+          ? [value]
+          : [];
 
       if (!files.length) {
         return of([field.key, field.multiple ? [] : null] as const);
       }
 
-      return forkJoin(files.map(f => upload(f))).pipe(
-        map(urls => [field.key, field.multiple ? urls : urls[0]] as const)
+      return forkJoin(files.map((f) => upload(f))).pipe(
+        map((urls) => [field.key, field.multiple ? urls : urls[0]] as const)
       );
     });
 
     forkJoin(uploads$).subscribe({
       next: (results) => {
         results.forEach(([key, url]) => (model[key] = url));
+        this.uploading.set(false);
         this.formSubmit.emit(model);
-        this.isSubmitting.set(false);
       },
-      error: () => this.isSubmitting.set(false),
+      error: () => this.uploading.set(false),
     });
+  }
+
+  /** Current values, minus fields flagged excludeFromSubmit, numbers coerced. */
+  private buildPayload(): Record<string, unknown> {
+    const value = this.modelSignal();
+    const model: Record<string, unknown> = {};
+
+    this.fields().forEach((field) => {
+      if (field.excludeFromSubmit) return;
+
+      const raw = value[field.key];
+
+      if (field.type !== 'number') {
+        model[field.key] = raw;
+        return;
+      }
+
+      model[field.key] = raw === '' || raw === null ? null : Number(raw);
+    });
+
+    return model;
+  }
+
+  /** Clears every field back to its empty value. Useful after a successful submit. */
+  reset() {
+    this.modelSignal.set(this.defaultsFor(this.fields()));
   }
 }

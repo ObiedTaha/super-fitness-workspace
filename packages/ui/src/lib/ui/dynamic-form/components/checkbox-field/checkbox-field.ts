@@ -1,19 +1,21 @@
 import { Component, input } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
-import { FieldConfig } from 'libs/shared/ui/src/models/field-types';
-import { CheckboxModule } from 'primeng/checkbox';
+import { CheckboxFieldConfig } from '../../../../models/field-types';
 
 @Component({
   selector: 'lib-checkbox-field',
-  imports: [FormField, CheckboxModule],
- template: `
- <div class="flex flex-col gap-1 w-full">
-  <p-checkbox [formField]="control()" [binary]="true" [inputId]="field().key" />
-  <label class="text-sm font-medium text-gray-700" [for]="field().key">{{ field().label }}</label>
-</div>
-`
+  imports: [FormField],
+  template: `
+    <div class="field-control">
+      <label class="field-check" [for]="field().key">
+        <input type="checkbox" [id]="field().key" [formField]="control()" />
+        {{ field().label }}
+      </label>
+    </div>
+  `,
+  styleUrl: '../field.css',
 })
 export class CheckboxField {
-   field = input.required<Extract<FieldConfig, { type: 'checkbox' }>>();
+  field = input.required<CheckboxFieldConfig>();
   control = input.required<FieldTree<boolean>>();
 }

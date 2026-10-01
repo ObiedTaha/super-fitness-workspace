@@ -1,21 +1,57 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { SelectField } from './select-field';
+import { SelectFieldConfig } from '../../../../models/field-types';
+import { fieldControl } from '../../../../../testing/field-control';
 
 describe('SelectField', () => {
-  let component: SelectField;
-  let fixture: ComponentFixture<SelectField>;
+  const base: SelectFieldConfig = {
+    key: 'gender',
+    type: 'select',
+    label: 'Gender',
+    required: true,
+    options: [
+      { label: 'Male', value: 'male' },
+      { label: 'Female', value: 'female' },
+    ],
+  };
+
+  async function render(field: SelectFieldConfig = base) {
+    const fixture = TestBed.createComponent(SelectField);
+    fixture.componentRef.setInput('field', field);
+    fixture.componentRef.setInput('control', fieldControl(''));
+    await fixture.whenStable();
+    return fixture;
+  }
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SelectField],
     }).compileComponents();
-
-    fixture = TestBed.createComponent(SelectField);
-    component = fixture.componentInstance;
-    await fixture.whenStable();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('should create', async () => {
+    const fixture = await render();
+    expect(fixture.componentInstance).toBeTruthy();
+  });
+
+  it('renders the label and the select control', async () => {
+    const fixture = await render();
+    expect(
+      fixture.nativeElement.querySelector('label').textContent?.trim()
+    ).toBe('Gender *');
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
+    expect(select.id).toBe('gender');
+    // A disabled placeholder option, then one option per configured choice.
+    expect(Array.from(select.options).map((o) => o.value)).toEqual(['', 'male', 'female']);
+  });
+
+  it('falls back to a default placeholder when no i18n is provided', async () => {
+    const fixture = await render();
+    expect(fixture.nativeElement.textContent).toContain('Select');
+  });
+
+  it('prefers an explicit placeholder over the default', async () => {
+    const fixture = await render({ ...base, placeholder: 'Pick a gender' });
+    expect(fixture.nativeElement.textContent).toContain('Pick a gender');
   });
 });

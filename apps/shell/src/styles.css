@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+/* Tailwind v4 auto-detects sources next to this file only; the federated
+   remotes and the shared UI lib have to be listed explicitly or their utility
+   classes are missing from the shell's stylesheet. */
+@source "../../authApp/src";
+@source "../../superFitness/src";
+@source "../../../packages/ui/src";
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #05060a;
+}

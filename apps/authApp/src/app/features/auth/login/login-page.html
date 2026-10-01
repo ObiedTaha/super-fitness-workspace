@@ -1,0 +1,42 @@
+<main class="auth-page">
+  <div class="auth-area">
+    <lib-auth-header eyebrow="Hey There" title="Welcome Back" />
+
+    <section class="auth-card">
+      <h2 class="auth-title">Login</h2>
+
+      <!-- <app-auth-feedback [errors]="errors()" [notice]="notice()" /> -->
+
+      <lib-dynamic-form
+        class="auth-form"
+        [fields]="fields"
+        [submitting]="submitting()"
+        [disableSubmitWhenInvalid]="false"
+        submitLabel="Login"
+        loadingLabel="Signing in..."
+        (formSubmit)="onSubmit($event)"
+      >
+        <div formBeforeSubmit>
+          <div class="auth-row-end">
+            <button
+              type="button"
+              class="auth-link"
+              (click)="onUnavailable('Password recovery')"
+            >
+              Forget Password ?
+            </button>
+          </div>
+
+          <app-social-sign-in
+            (providerSelected)="onUnavailable('')"
+          />
+        </div>
+
+        <p formAfterSubmit class="auth-footnote">
+          Dont Have An Account Yet ?
+          <a class="auth-link" routerLink="../register">Register</a>
+        </p>
+      </lib-dynamic-form>
+    </section>
+  </div>
+</main>

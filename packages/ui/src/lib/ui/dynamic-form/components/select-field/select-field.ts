@@ -1,33 +1,78 @@
-import { Component, inject, input } from '@angular/core';
-import { FormField ,FieldTree } from '@angular/forms/signals';
-import { SelectModule } from 'primeng/select';
-import { FieldConfig } from 'libs/shared/ui/src/models/field-types';
-import {  TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { FormField, FieldTree } from '@angular/forms/signals';
+import { TranslateService } from '@ngx-translate/core';
+import { SelectFieldConfig } from '../../../../models/field-types';
+import { FieldIcon } from '../../../icon/field-icon';
+
 @Component({
   selector: 'lib-select-field',
-  imports: [FormField, SelectModule , TranslatePipe],
+  imports: [FormField, FieldIcon],
   template: `
-  <div class="flex flex-col gap-1 w-full" [class.untouched]="!control()().touched()">
-  <label class="text-sm font-medium text-gray-700" [for]="field().key">{{ field().label }}{{ field().required ? ' *' : '' }}</label>
+    <div class="field-control">
+      @if (field().label) {
+        <label class="field-label" [class.sr-only]="field().hideLabel" [for]="field().key">
+          {{ field().label }}{{ field().required ? ' *' : '' }}
+        </label>
+      }
 
-<p-select
-  [dir]="translate.currentLang() === 'ar' ? 'rtl' : 'ltr'"
-  [inputId]="field().key"
-  [formField]="$any(control())"
-  [options]="field().options"
-  optionLabel="label"
-  optionValue="value"
-  [placeholder]="'form.selectPlaceholder' | translate" />
+      <div class="field-input-shell has-trailing" [class.has-icon]="!!field().icon">
+        @if (field().icon) {
+          <span class="field-icon"><lib-field-icon [name]="field().icon!" /></span>
+        }
 
-  @if (control()().touched() && control()().invalid()) {
-    <span class="text-red-600 text-xs">
-      {{ control()().errors()[0]?.message }}
-    </span>
-  }
-</div>`
+        <select
+          class="field-input"
+          [class.is-placeholder]="isEmpty()"
+          [dir]="dir()"
+          [id]="field().key"
+          [formField]="$any(control())"
+          [attr.aria-invalid]="showError() || null"
+          [attr.aria-describedby]="showError() ? errorId() : null"
+        >
+          <option value="" disabled>{{ placeholder() }}</option>
+          @for (option of field().options; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+
+        <span class="field-trailing is-decorative">
+          <lib-field-icon name="chevron-down" [size]="16" />
+        </span>
+      </div>
+
+      @if (showError()) {
+        <span class="field-error" [id]="errorId()">{{ control()().errors()[0]?.message }}</span>
+      }
+    </div>
+  `,
+  styleUrl: '../field.css',
 })
 export class SelectField {
-   translate = inject(TranslateService);
-  field = input.required<Extract<FieldConfig, { type: 'select' }>>();
+  /** Optional so the lib renders without an i18n setup in the host app. */
+  private translate = inject(TranslateService, { optional: true });
+
+  field = input.required<SelectFieldConfig>();
+  /**
+   * A native select always reports its value as a string, so option values
+   * should be strings (they are for every select in this workspace).
+   */
   control = input.required<FieldTree<string>>();
+
+  protected readonly dir = computed(() =>
+    this.translate?.currentLang() === 'ar' ? 'rtl' : 'ltr'
+  );
+
+  /** An explicit placeholder wins; otherwise fall back to the translated default. */
+  protected readonly placeholder = computed(
+    () =>
+      this.field().placeholder ??
+      this.translate?.instant('form.selectPlaceholder') ??
+      'Select'
+  );
+
+  protected readonly isEmpty = computed(() => !this.control()().value());
+  protected readonly errorId = computed(() => `${this.field().key}-error`);
+  protected readonly showError = computed(
+    () => this.control()().touched() && this.control()().invalid()
+  );
 }

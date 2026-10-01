@@ -1,0 +1,13 @@
+/* Standalone dev server only: when authApp runs inside the shell, this file is
+   not loaded — the shell's stylesheet is. Keep the two in sync. */
+@import "tailwindcss";
+
+@source "../src";
+@source "../../../packages/ui/src";
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #05060a;
+}

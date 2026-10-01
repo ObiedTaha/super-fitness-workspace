@@ -1,0 +1,32 @@
+<h2 class="auth-title">Register</h2>
+
+<!-- <app-auth-feedback [errors]="stepper.errors()" [notice]="notice()" /> -->
+
+<lib-dynamic-form
+  class="auth-form"
+  [fields]="fields"
+  [initialData]="stepper.draft()"
+  [submitting]="stepper.submitting()"
+  [disableSubmitWhenInvalid]="false"
+  submitLabel="Register"
+  (formSubmit)="onSubmit($event)"
+>
+  <div formBeforeSubmit>
+    <div class="auth-row-end">
+      <button
+        type="button"
+        class="auth-link auth-link--strong"
+        
+      >
+        Forget Password ?
+      </button>
+    </div>
+
+    <app-social-sign-in  />
+  </div>
+
+  <p formAfterSubmit class="auth-footnote">
+    Already Have An Account ?
+    <a class="auth-link auth-link--strong" routerLink="../login">Login</a>
+  </p>
+</lib-dynamic-form>
