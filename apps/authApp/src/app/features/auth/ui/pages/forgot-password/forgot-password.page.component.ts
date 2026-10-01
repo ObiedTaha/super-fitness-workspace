@@ -8,38 +8,7 @@ import { AuthStore } from '../../../store/auth.store';
   selector: 'app-forgot-password-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  template: `
-    <main class="auth-shell">
-      <section class="auth-card" aria-labelledby="forgot-password-title">
-        <div class="brand-block">
-          <span class="brand-mark">S</span>
-          <span class="brand-name">SUPER FITNESS</span>
-        </div>
-
-        <h1 id="forgot-password-title">Reset your password</h1>
-        <p class="subtitle">Enter your email and we’ll send the recovery steps.</p>
-
-        @if (authStore.error$ | async; as error) {
-          <p class="error-message" role="alert">{{ error }}</p>
-        }
-
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <label class="field">
-            <span>Email</span>
-            <input type="email" formControlName="email" placeholder="you@example.com" />
-          </label>
-
-          <button type="submit" [disabled]="(loading$ | async) ?? false">
-            {{ (loading$ | async) ? 'Sending...' : 'Send reset link' }}
-          </button>
-        </form>
-
-        <p class="footer-text">
-          <a routerLink="/auth/login">Back to sign in</a>
-        </p>
-      </section>
-    </main>
-  `,
+  templateUrl: './forgot-password.page.component.html',
   styles: `
     :host { display: block; }
     * { box-sizing: border-box; }
