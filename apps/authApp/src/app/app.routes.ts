@@ -1,9 +1,14 @@
 import { Route } from '@angular/router';
+import { authRoutes } from './features/auth/auth.routes';
 
 export const appRoutes: Route[] = [
   {
+    path: 'auth',
+    children: authRoutes,
+  },
+  {
     path: '',
-    loadChildren: () =>
-      import('./remote-entry/entry.routes').then((m) => m.remoteRoutes),
+    redirectTo: 'auth/login',
+    pathMatch: 'full',
   },
 ];
