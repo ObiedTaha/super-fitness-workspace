@@ -1,1 +1,2 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+@source "../../authApp/src/app/features/auth/ui/components/auth-layout";
