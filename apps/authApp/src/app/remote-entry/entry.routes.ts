@@ -1,3 +1,4 @@
+import { isDevMode } from '@angular/core';
 import { Route } from '@angular/router';
 
 /**
@@ -30,3 +31,12 @@ export const remoteRoutes: Route[] = [
       ),
   },
 ];
+if (isDevMode()) {
+  remoteRoutes.push({
+    path: 'layout-preview',
+    loadComponent: () =>
+      import('../features/auth/ui/components/auth-layout/auth-layout.component').then(
+        (m) => m.AuthLayoutComponent,
+      ),
+  });
+}

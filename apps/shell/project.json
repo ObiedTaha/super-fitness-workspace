@@ -24,6 +24,11 @@
           {
             "glob": "**/*",
             "input": "apps/shell/public"
+          },
+          {
+            "glob": "*.png",
+            "input": "apps/authApp/public/assets/auth",
+            "output": "assets/auth"
           }
         ],
         "styles": [
@@ -74,7 +79,11 @@
         "development": {
           "buildTarget": "shell:build:development"
         }
-      }
+      },
+      "dependsOn": [
+        "authApp:serve",
+        "superFitness:serve"
+      ]
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",

@@ -1,0 +1,35 @@
+<main class="auth-shell">
+      <section class="auth-card" aria-labelledby="verify-reset-title">
+        <div class="brand-block">
+          <span class="brand-mark">S</span>
+          <span class="brand-name">SUPER FITNESS</span>
+        </div>
+
+        <h1 id="verify-reset-title">Verify reset code</h1>
+        <p class="subtitle">Enter the email and the code from your message.</p>
+
+        @if (authStore.error$ | async; as error) {
+          <p class="error-message" role="alert">{{ error }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" formControlName="email" placeholder="you@example.com" />
+          </label>
+
+          <label class="field">
+            <span>Reset code</span>
+            <input type="text" formControlName="resetCode" placeholder="Enter your code" />
+          </label>
+
+          <button type="submit" [disabled]="(loading$ | async) ?? false">
+            {{ (loading$ | async) ? 'Verifying...' : 'Verify code' }}
+          </button>
+        </form>
+
+        <p class="footer-text">
+          <a routerLink="/auth/forgot-password">Request another code</a>
+        </p>
+      </section>
+    </main>

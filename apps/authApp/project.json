@@ -28,7 +28,7 @@
           }
         ],
         "styles": [
-          "apps/authApp/src/styles.css"
+          "apps/authApp/src/styles.scss"
         ],
         "customWebpackConfig": {
           "path": "apps/authApp/webpack.config.ts"
@@ -69,7 +69,10 @@
       "defaultConfiguration": "development",
       "options": {
         "port": 4201,
-        "publicHost": "http://localhost:4201"
+        "publicHost": "http://localhost:4201",
+        "headers": {
+          "Access-Control-Allow-Origin": "*"
+        }
       },
       "configurations": {
         "production": {
@@ -78,10 +81,7 @@
         "development": {
           "buildTarget": "authApp:build:development"
         }
-      },
-      "dependsOn": [
-        "shell:serve"
-      ]
+      }
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",

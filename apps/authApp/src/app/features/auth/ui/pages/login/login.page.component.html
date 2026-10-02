@@ -1,0 +1,51 @@
+<main class="auth-shell">
+      <section class="auth-card" aria-labelledby="login-title">
+        <div class="brand-block">
+          <span class="brand-mark">S</span>
+          <span class="brand-name">SUPER FITNESS</span>
+        </div>
+
+        <h1 id="login-title">Welcome back</h1>
+        <p class="subtitle">Sign in to continue your training plan.</p>
+
+        @if (error$ | async; as error) {
+          <p class="error-message" role="alert">{{ error }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" formControlName="email" placeholder="you@example.com" />
+            @if (form.controls.email.invalid && form.controls.email.touched) {
+              <small>Enter a valid email address.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Password</span>
+            <input type="password" formControlName="password" placeholder="••••••••" />
+            @if (form.controls.password.invalid && form.controls.password.touched) {
+              <small>Password is required.</small>
+            }
+          </label>
+
+          <div class="row between">
+            <label class="checkbox">
+              <input type="checkbox" formControlName="remember" />
+              <span>Remember me</span>
+            </label>
+
+            <a routerLink="/auth/forgot-password">Forgot password?</a>
+          </div>
+
+          <button type="submit" [disabled]="(loading$ | async) ?? false">
+            {{ (loading$ | async) ? 'Signing in...' : 'Sign in' }}
+          </button>
+        </form>
+
+        <p class="footer-text">
+          Need an account?
+          <a routerLink="/auth/register">Create one</a>
+        </p>
+      </section>
+    </main>

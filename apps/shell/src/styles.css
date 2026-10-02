@@ -6,6 +6,7 @@
 @source "../../authApp/src";
 @source "../../superFitness/src";
 @source "../../../packages/ui/src";
+@source "../../authApp/src/app/features/auth/ui/components/auth-layout";
 
 html,
 body {

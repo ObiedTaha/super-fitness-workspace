@@ -4,11 +4,15 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/superFitness/src",
-  "tags": ["type:app"],
+  "tags": [
+    "type:app"
+  ],
   "targets": {
     "build": {
       "executor": "@nx/angular:webpack-browser",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/superFitness",
@@ -22,7 +26,9 @@
             "input": "apps/superFitness/public"
           }
         ],
-        "styles": ["apps/superFitness/src/styles.scss"],
+        "styles": [
+          "apps/superFitness/src/styles.scss"
+        ],
         "customWebpackConfig": {
           "path": "apps/superFitness/webpack.config.ts"
         }
@@ -62,7 +68,10 @@
       "defaultConfiguration": "development",
       "options": {
         "port": 4202,
-        "publicHost": "http://localhost:4202"
+        "publicHost": "http://localhost:4202",
+        "headers": {
+          "Access-Control-Allow-Origin": "*"
+        }
       },
       "configurations": {
         "production": {
@@ -72,7 +81,6 @@
           "buildTarget": "superFitness:build:development"
         }
       },
-      "dependsOn": ["shell:serve"]
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
