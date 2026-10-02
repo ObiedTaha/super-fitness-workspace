@@ -1,6 +1,15 @@
 import { isDevMode } from '@angular/core';
 import { Route } from '@angular/router';
-import { TodosPageComponent } from '../features/todos/ui/pages/todos-page.component';
+import { AUTH_ROUTES } from '../features/auth/auth.routes';
+import { provideAuth } from '../features/auth/auth.providers';
+
+export const remoteRoutes: Route[] = [
+  {
+    path: '',
+    providers: [provideAuth()],
+    children: AUTH_ROUTES,
+  },
+];
 
 export const remoteRoutes: Route[] = [
   { path: '', component: TodosPageComponent },

@@ -1,0 +1,99 @@
+<main class="auth-shell">
+      <section class="auth-card" aria-labelledby="register-title">
+        <div class="brand-block">
+          <span class="brand-mark">S</span>
+          <span class="brand-name">SUPER FITNESS</span>
+        </div>
+
+        <h1 id="register-title">Create your account</h1>
+        <p class="subtitle">Start building a stronger routine today.</p>
+
+        @if (authStore.error$ | async; as error) {
+          <p class="error-message" role="alert">{{ error }}</p>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="split-grid">
+            <label class="field">
+              <span>First name</span>
+              <input type="text" formControlName="firstName" placeholder="First name" />
+            </label>
+            <label class="field">
+              <span>Last name</span>
+              <input type="text" formControlName="lastName" placeholder="Last name" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Email</span>
+            <input type="email" formControlName="email" placeholder="you@example.com" />
+          </label>
+
+          <div class="split-grid">
+            <label class="field">
+              <span>Password</span>
+              <input type="password" formControlName="password" placeholder="At least 6 chars" />
+            </label>
+            <label class="field">
+              <span>Repeat password</span>
+              <input type="password" formControlName="rePassword" placeholder="Repeat password" />
+            </label>
+          </div>
+
+          @if (form.errors?.['passwordMismatch'] && form.touched) {
+            <p class="inline-error">Passwords do not match.</p>
+          }
+
+          <div class="split-grid">
+            <label class="field">
+              <span>Gender</span>
+              <select formControlName="gender">
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Goal</span>
+              <input type="text" formControlName="goal" placeholder="General fitness" />
+            </label>
+          </div>
+
+          <div class="split-grid">
+            <label class="field">
+              <span>Height (cm)</span>
+              <input type="number" formControlName="height" min="1" />
+            </label>
+            <label class="field">
+              <span>Weight (kg)</span>
+              <input type="number" formControlName="weight" min="1" />
+            </label>
+          </div>
+
+          <div class="split-grid">
+            <label class="field">
+              <span>Age</span>
+              <input type="number" formControlName="age" min="1" />
+            </label>
+            <label class="field">
+              <span>Activity level</span>
+              <select formControlName="activityLevel">
+                <option value="level1">Level 1</option>
+                <option value="level2">Level 2</option>
+                <option value="level3">Level 3</option>
+                <option value="level4">Level 4</option>
+                <option value="level5">Level 5</option>
+              </select>
+            </label>
+          </div>
+
+          <button type="submit" [disabled]="(loading$ | async) ?? false">
+            {{ (loading$ | async) ? 'Creating account...' : 'Create account' }}
+          </button>
+        </form>
+
+        <p class="footer-text">
+          Already registered?
+          <a routerLink="/auth/login">Sign in</a>
+        </p>
+      </section>
+    </main>

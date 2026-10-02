@@ -4,11 +4,15 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/shell/src",
-  "tags": ["type:app"],
+  "tags": [
+    "type:app"
+  ],
   "targets": {
     "build": {
       "executor": "@nx/angular:webpack-browser",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/shell",
@@ -27,7 +31,9 @@
             "output": "assets/auth"
           }
         ],
-        "styles": ["apps/shell/src/styles.css"],
+        "styles": [
+          "apps/shell/src/styles.css"
+        ],
         "customWebpackConfig": {
           "path": "apps/shell/webpack.config.ts"
         }
@@ -73,7 +79,11 @@
         "development": {
           "buildTarget": "shell:build:development"
         }
-      }
+      },
+      "dependsOn": [
+        "authApp:serve",
+        "superFitness:serve"
+      ]
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
